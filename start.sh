@@ -1,0 +1,9 @@
+@echo off
+echo 正在释放端口 3200...
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3200 ^| findstr LISTENING') do (
+    echo 找到进程 %%a，正在终止...
+    taskkill /F /PID %%a 2>nul
+)
+timeout /t 1 /nobreak >nul
+echo 启动应用...
+node src/app.js
