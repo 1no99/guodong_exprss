@@ -111,10 +111,11 @@ class CartModel {
   }
 
   /**
-   * 根据手机号获取用户购物车列表（包含商品信息）
+   * 根据手机号获取用户购物车列表（包含商品信息及goodtype规格）
    */
   static async getListByPhone(userPhone) {
-    const sql = `
+    // 1. 查询购物车+商品信息
+    const cartSql = `
       SELECT
         c.id as cart_id,
         c.quantity,
@@ -136,13 +137,43 @@ class CartModel {
       ORDER BY c.created_at DESC
     `;
 
-    const [cartItems] = await db.query(sql, [userPhone]);
+    const [cartItems] = await db.query(cartSql, [userPhone]);
 
-    // 解析SKU信息并计算小计
+    if (cartItems.length === 0) return [];
+
+    // 2. 批量查询所有关联的goodtype
+    const productIds = [...new Set(cartItems.map(item => item.product_id).filter(Boolean))];
+    let goodTypeMap = {};
+
+    if (productIds.length > 0) {
+      const placeholders = productIds.map(() => '?').join(',');
+      const gtSql = `SELECT * FROM goodtype WHERE goodid IN (${placeholders})`;
+      const [goodTypes] = await db.query(gtSql, productIds);
+
+      // 按goodid分组
+      goodTypes.forEach(gt => {
+        if (!goodTypeMap[gt.goodid]) goodTypeMap[gt.goodid] = [];
+        goodTypeMap[gt.goodid].push({
+          id: gt.id,
+          goodid: gt.goodid,
+          price: gt.price,
+          parentName: gt.parentName,
+          childName: gt.childName,
+          stock: gt.stock,
+          typeimg: gt.typeimg,
+          etx1: gt.etx1,
+          etx2: gt.etx2,
+          etx3: gt.etx3
+        });
+      });
+    }
+
+    // 3. 合并数据并计算小计
     return cartItems.map(item => {
       const subtotal = (parseFloat(item.price) * item.quantity).toFixed(2);
       return {
         ...item,
+        good_types: goodTypeMap[item.product_id] || [],
         subtotal: parseFloat(subtotal),
         is_valid: item.status === 1 && item.stock > 0
       };

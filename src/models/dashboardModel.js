@@ -10,6 +10,7 @@ class DashboardModel {
       SELECT COUNT(*) as count
       FROM orders
       WHERE created_at >= ? AND created_at <= ?
+       AND order_status = 2
     `;
     const [totalOrdersResult] = await db.query(totalOrdersSql, [startTime, endTime]);
 
@@ -34,7 +35,7 @@ class DashboardModel {
       SELECT COALESCE(SUM(pay_amount), 0) as total
       FROM orders
       WHERE created_at >= ? AND created_at <= ?
-        AND pay_status = 1
+        AND order_status = 2
     `;
     const [totalSalesResult] = await db.query(totalSalesSql, [startTime, endTime]);
 
