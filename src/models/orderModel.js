@@ -526,7 +526,7 @@ class OrderModel {
 
     const { page: currentPage, pageSize: currentPageSize, offset } = Pagination.getParams(page, pageSize);
 
-    let whereConditions = ['1=1'];
+    let whereConditions = ['1=1', 'order_status != 4'];
     let queryParams = [];
 
     if (order_status !== undefined && order_status !== '') {
