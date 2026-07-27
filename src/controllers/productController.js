@@ -265,7 +265,8 @@ class ProductController {
         attributes,
         is_hot,
         is_new,
-        is_recommend
+        is_recommend,
+        sort_order
       } = req.body;
 
       const product = await ProductModel.findById(id);
@@ -304,7 +305,7 @@ class ProductController {
       if (is_hot !== undefined) updateData.is_hot = parseInt(is_hot);
       if (is_new !== undefined) updateData.is_new = parseInt(is_new);
       if (is_recommend !== undefined) updateData.is_recommend = parseInt(is_recommend);
-
+      if (sort_order !== undefined) updateData.sort_order = parseInt(sort_order);
       console.log('[更新商品] 处理后的数据:', {
         ...updateData,
         images1: updateData.images1 ? '有数据' : '无',
