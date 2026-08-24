@@ -141,19 +141,18 @@ class CartModel {
 
     if (cartItems.length === 0) return [];
 
-    // 2. 批量查询所有关联的goodtype
-    const productIds = [...new Set(cartItems.map(item => item.product_id).filter(Boolean))];
+    // 2. 批量查询购物车条目对应的单个goodtype（按act_num_id匹配）
+    const actNumIds = cartItems.map(item => item.act_num_id).filter(Boolean);
     let goodTypeMap = {};
 
-    if (productIds.length > 0) {
-      const placeholders = productIds.map(() => '?').join(',');
-      const gtSql = `SELECT * FROM goodtype WHERE goodid IN (${placeholders})`;
-      const [goodTypes] = await db.query(gtSql, productIds);
+    if (actNumIds.length > 0) {
+      const placeholders = actNumIds.map(() => '?').join(',');
+      const gtSql = `SELECT * FROM goodtype WHERE id IN (${placeholders})`;
+      const [goodTypes] = await db.query(gtSql, actNumIds);
 
-      // 按goodid分组
+      // 按goodtype.id索引
       goodTypes.forEach(gt => {
-        if (!goodTypeMap[gt.goodid]) goodTypeMap[gt.goodid] = [];
-        goodTypeMap[gt.goodid].push({
+        goodTypeMap[gt.id] = {
           id: gt.id,
           goodid: gt.goodid,
           price: gt.price,
@@ -164,16 +163,17 @@ class CartModel {
           etx1: gt.etx1,
           etx2: gt.etx2,
           etx3: gt.etx3
-        });
+        };
       });
     }
 
     // 3. 合并数据并计算小计
     return cartItems.map(item => {
       const subtotal = (parseFloat(item.price) * item.quantity).toFixed(2);
+      const matchedGoodType = item.act_num_id ? goodTypeMap[item.act_num_id] : null;
       return {
         ...item,
-        good_types: goodTypeMap[item.product_id] || [],
+        good_type: matchedGoodType ? [matchedGoodType] : [],
         subtotal: parseFloat(subtotal),
         is_valid: item.status === 1 && item.stock > 0
       };
@@ -222,8 +222,10 @@ class CartModel {
    * 根据手机号删除购物车商品
    */
   static async removeByPhone(cartId, userPhone) {
-    const sql = 'DELETE FROM cart WHERE id = ? AND user_phone = ?';
-    await db.query(sql, [cartId, userPhone]);
+    const ids = typeof cartId === 'string' ? cartId.split(',').filter(Boolean) : [cartId];
+    const placeholders = ids.map(() => '?').join(',');
+    const sql = `DELETE FROM cart WHERE id IN (${placeholders}) AND user_phone = ?`;
+    await db.query(sql, [...ids, userPhone]);
   }
 
   /**

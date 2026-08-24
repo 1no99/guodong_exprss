@@ -129,11 +129,14 @@ class CartController {
    */
   static async removeFromCart(req, res) {
     try {
-      const { id } = req.params;
-      const { phone } = req.body;
+      const { id, phone } = req.body;
 
       if (!phone) {
         return Response.validateError(res, '手机号不能为空');
+      }
+
+      if (!id) {
+        return Response.validateError(res, '购物车商品ID不能为空');
       }
 
       await CartModel.removeByPhone(id, phone);
