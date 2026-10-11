@@ -20,6 +20,57 @@ class GoodTypeModel {
   }
 
   /**
+   * 分页查询型号列表（关联商品表获取商品名称）
+   */
+  static async getList({ page = 1, pageSize = 10, productId, typeId, typeName }) {
+    let where = [];
+    let params = [];
+
+    if (productId) {
+      where.push('gt.goodid = ?');
+      params.push(productId);
+    }
+    if (typeId) {
+      where.push('gt.id = ?');
+      params.push(typeId);
+    }
+    if (typeName) {
+      where.push('gt.childName LIKE ?');
+      params.push(`%${typeName}%`);
+    }
+
+    const whereClause = where.length > 0 ? 'WHERE ' + where.join(' AND ') : '';
+
+    // 查询总数
+    const countSql = `SELECT COUNT(*) AS total FROM goodtype gt ${whereClause}`;
+    const [countRows] = await db.query(countSql, params);
+    const total = countRows[0].total;
+
+    // 查询分页数据，关联 products 表获取商品名称
+    const offset = (page - 1) * pageSize;
+    const dataSql = `
+      SELECT gt.id, gt.goodid, gt.childName,
+             p.name AS product_name
+      FROM goodtype gt
+      LEFT JOIN products p ON gt.goodid = p.id
+      ${whereClause}
+      ORDER BY gt.id DESC
+      LIMIT ? OFFSET ?
+    `;
+    const [rows] = await db.query(dataSql, [...params, pageSize, offset]);
+
+    return { list: rows, total };
+  }
+
+  /**
+   * 更新型号名称
+   */
+  static async updateName(id, childName) {
+    const sql = 'UPDATE goodtype SET childName = ? WHERE id = ?';
+    await db.query(sql, [childName, id]);
+  }
+
+  /**
    * 根据商品ID删除规格
    */
   static async deleteByProductId(productId) {

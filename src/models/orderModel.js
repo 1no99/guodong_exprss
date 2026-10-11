@@ -72,12 +72,15 @@ class OrderModel {
           item.total_price
         ]);
 
-        // 扣减规格库存
+        // 扣减规格库存（原子操作，防止并发超卖）
         if (item.sku_id) {
-          await conn.query(
-            'UPDATE goodtype SET stock = stock - ? WHERE id = ?',
-            [item.quantity, item.sku_id]
+          const [updateResult] = await conn.query(
+            'UPDATE goodtype SET stock = stock - ? WHERE id = ? AND stock >= ?',
+            [item.quantity, item.sku_id, item.quantity]
           );
+          if (updateResult.affectedRows === 0) {
+            throw new Error(`商品"${item.product_name} ${item.sku_name || ''}"库存不足`);
+          }
         }
       }
 
@@ -634,6 +637,14 @@ class OrderModel {
       WHERE id = ?
     `;
     await db.query(sql, [expressCompany, expressNo, id]);
+  }
+
+  /**
+   * 打印次数 +1（pay_type 字段自增）
+   */
+  static async incrementPrintCount(id) {
+    const sql = 'UPDATE orders SET pay_type = IFNULL(pay_type, 0) + 1 WHERE id = ?';
+    await db.query(sql, [id]);
   }
 }
 

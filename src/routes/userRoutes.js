@@ -34,6 +34,16 @@ router.post('/bindPhone', [
 // 根据手机号获取用户信息（需要认证）
 router.get('/info/by-phone', authMiddleware, UserController.getUserInfoByPhone);
 
+// 获取超级管理员手机号列表（用于判断是否显示代客下单功能）
+router.get('/superadmin/phones', UserController.getSuperAdminPhones);
+
+// ============ 代客下单用户管理接口 ============
+router.get('/superadmin', authMiddleware, UserController.getSuperAdminList);
+router.post('/superadmin', [
+  body('phone').isMobilePhone('zh-CN').withMessage('手机号格式不正确')
+], validateMiddleware, authMiddleware, UserController.createSuperAdmin);
+router.delete('/superadmin/:id', authMiddleware, UserController.deleteSuperAdmin);
+
 // 地址相关路由（使用手机号作为标识，不需要认证）
 router.get('/address', AddressController.getAddressList);
 router.get('/address/:id', AddressController.getAddressDetail);

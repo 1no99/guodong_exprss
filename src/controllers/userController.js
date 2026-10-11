@@ -17,14 +17,16 @@ class UserController {
 
       // 调用微信接口获取openid
       const { WECHAT_APP_ID, WECHAT_APP_SECRET } = process.env;
+      
       const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${WECHAT_APP_ID}&secret=${WECHAT_APP_SECRET}&js_code=${code}&grant_type=authorization_code`;
 
       const wechatResponse = await axios.get(url);
       const { openid, errcode, errmsg } = wechatResponse.data;
-      console.log(wechatResponse.data);
+       console.log(wechatResponse.data);
       
 
       if (errcode) {
+       
         return Response.error(res, errmsg || '微信登录失败', 400);
       }
 
@@ -500,6 +502,63 @@ class UserController {
     } catch (error) {
       console.error('重置密码错误:', error);
       return Response.serverError(res, '重置密码失败');
+    }
+  }
+
+  /**
+   * 获取超级管理员手机号列表
+   */
+  static async getSuperAdminPhones(req, res) {
+    try {
+      const phones = await UserModel.getSuperAdminPhones();
+      return Response.success(res, phones);
+    } catch (error) {
+      console.error('获取超级管理员列表错误:', error);
+      return Response.serverError(res, '获取超级管理员列表失败');
+    }
+  }
+
+  /**
+   * 获取代客下单用户列表
+   */
+  static async getSuperAdminList(req, res) {
+    try {
+      const list = await UserModel.getAllSuperAdmins();
+      return Response.success(res, list);
+    } catch (error) {
+      console.error('获取代客下单用户列表错误:', error);
+      return Response.serverError(res, '获取代客下单用户列表失败');
+    }
+  }
+
+  /**
+   * 新增代客下单用户
+   */
+  static async createSuperAdmin(req, res) {
+    try {
+      const { phone } = req.body;
+      if (!phone) {
+        return Response.validateError(res, '手机号不能为空');
+      }
+      const id = await UserModel.createSuperAdmin(phone);
+      return Response.success(res, { id }, '添加成功');
+    } catch (error) {
+      console.error('新增代客下单用户错误:', error);
+      return Response.serverError(res, '新增代客下单用户失败');
+    }
+  }
+
+  /**
+   * 删除代客下单用户
+   */
+  static async deleteSuperAdmin(req, res) {
+    try {
+      const { id } = req.params;
+      await UserModel.deleteSuperAdmin(id);
+      return Response.success(res, null, '删除成功');
+    } catch (error) {
+      console.error('删除代客下单用户错误:', error);
+      return Response.serverError(res, '删除代客下单用户失败');
     }
   }
 }

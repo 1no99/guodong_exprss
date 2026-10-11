@@ -1,4 +1,5 @@
 const ProductSpecModel = require('../models/productSpecModel');
+const GoodTypeModel = require('../models/goodTypeModel');
 const Response = require('../utils/response');
 const { body, validationResult } = require('express-validator');
 
@@ -118,6 +119,61 @@ class ProductSpecController {
     } catch (error) {
       console.error('删除规格错误:', error);
       return Response.serverError(res, '删除规格失败');
+    }
+  }
+
+  /**
+   * 分页查询型号列表（关联商品名称）
+   */
+  static async getTypeList(req, res) {
+    try {
+      const { page = 1, pageSize = 10, product_id, type_id, type_name } = req.query;
+
+      const result = await GoodTypeModel.getList({
+        page: parseInt(page),
+        pageSize: parseInt(pageSize),
+        productId: product_id ? parseInt(product_id) : undefined,
+        typeId: type_id ? parseInt(type_id) : undefined,
+        typeName: type_name || undefined
+      });
+
+      return Response.success(res, {
+        list: result.list,
+        pagination: {
+          page: parseInt(page),
+          pageSize: parseInt(pageSize),
+          total: result.total
+        }
+      }, '获取型号列表成功');
+    } catch (error) {
+      console.error('获取型号列表错误:', error);
+      return Response.serverError(res, '获取型号列表失败');
+    }
+  }
+
+  /**
+   * 更新型号名称
+   */
+  static async updateTypeName(req, res) {
+    try {
+      const { id } = req.params;
+      const { childName } = req.body;
+
+      if (!childName || !childName.trim()) {
+        return Response.error(res, '型号名称不能为空', 400, 1001);
+      }
+
+      const type = await GoodTypeModel.findById(id);
+      if (!type) {
+        return Response.notFound(res, '型号不存在');
+      }
+
+      await GoodTypeModel.updateName(id, childName.trim());
+
+      return Response.success(res, null, '更新型号名称成功');
+    } catch (error) {
+      console.error('更新型号名称错误:', error);
+      return Response.serverError(res, '更新型号名称失败');
     }
   }
 }

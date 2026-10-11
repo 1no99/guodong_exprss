@@ -37,4 +37,7 @@ router.put('/admin/:id/ship', authMiddleware, OrderController.shipOrder);
 // 更新订单状态
 router.put('/update-status', authMiddleware, OrderController.updateOrderStatus);
 
+// 记录打印次数
+router.put('/admin/:id/print-count', authMiddleware, OrderController.incrementPrintCount);
+
 module.exports = router;

@@ -182,6 +182,40 @@ class UserModel {
     await db.query(sql, [id]);
   }
 
+  /**
+   * 获取所有启用的超级管理员手机号列表
+   */
+  static async getSuperAdminPhones() {
+    const sql = 'SELECT * FROM superadmin ';
+    const [rows] = await db.query(sql);
+    return rows.map(row => row.pone);
+  }
+
+  /**
+   * 获取所有代客下单用户列表
+   */
+  static async getAllSuperAdmins() {
+    const sql = 'SELECT * FROM superadmin';
+    const [rows] = await db.query(sql);
+    return rows;
+  }
+
+  /**
+   * 新增代客下单用户
+   */
+  static async createSuperAdmin(pone) {
+    const sql = 'INSERT INTO superadmin (pone) VALUES (?)';
+    const [result] = await db.query(sql, [pone]);
+    return result.insertId;
+  }
+
+  /**
+   * 删除代客下单用户
+   */
+  static async deleteSuperAdmin(id) {
+    const sql = 'DELETE FROM superadmin WHERE id = ?';
+    await db.query(sql, [id]);
+  }
 
 }
 

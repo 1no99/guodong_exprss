@@ -108,6 +108,9 @@ class OrderController {
       return Response.success(res, order, '下单成功', 201);
     } catch (error) {
       console.error('创建订单错误:', error);
+      if (error.message && error.message.includes('库存不足')) {
+        return Response.error(res, error.message, 400, 6002);
+      }
       return Response.serverError(res, '下单失败');
     }
   }
@@ -438,6 +441,9 @@ class OrderController {
       return Response.success(res, order, '创建订单成功', 201);
     } catch (error) {
       console.error('管理员创建订单错误:', error);
+      if (error.message && error.message.includes('库存不足')) {
+        return Response.error(res, error.message, 400, 6002);
+      }
       return Response.serverError(res, '创建订单失败');
     }
   }
@@ -504,6 +510,27 @@ class OrderController {
     } catch (error) {
       console.error('公开获取订单详情错误:', error);
       return Response.serverError(res, '获取订单详情失败');
+    }
+  }
+
+  /**
+   * 记录打印次数（pay_type +1）
+   */
+  static async incrementPrintCount(req, res) {
+    try {
+      const { id } = req.params;
+
+      const order = await OrderModel.findById(id);
+      if (!order) {
+        return Response.notFound(res, '订单不存在');
+      }
+
+      await OrderModel.incrementPrintCount(id);
+
+      return Response.success(res, null, '打印记录已更新');
+    } catch (error) {
+      console.error('记录打印次数错误:', error);
+      return Response.serverError(res, '记录打印次数失败');
     }
   }
 
