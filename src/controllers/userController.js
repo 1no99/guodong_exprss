@@ -10,7 +10,7 @@ class UserController {
   static async wechatLogin(req, res) {
     try {
       const { code, userInfo } = req.body;
-
+       console.log(req.body,'req.body');
       if (!code) {
         return Response.validateError(res, 'code不能为空');
       }
@@ -22,7 +22,7 @@ class UserController {
 
       const wechatResponse = await axios.get(url);
       const { openid, errcode, errmsg } = wechatResponse.data;
-       console.log(wechatResponse.data);
+       console.log(wechatResponse.data,'data');
       
 
       if (errcode) {
@@ -32,7 +32,8 @@ class UserController {
 
       // 查找或创建用户
       let user = await UserModel.findByOpenid(openid);
-
+      console.log(user,'user');
+      
       if (!user) {
         const userId = await UserModel.createByWechat(openid, userInfo);
         user = await UserModel.findById(userId);
@@ -72,8 +73,34 @@ class UserController {
    */
   static async bindPhone(req, res) {
     try {
-      const { phone, username, avatar } = req.body;
+      const { phone: rawPhone, code, username, avatar } = req.body;
       const userId = req.user.id;
+
+      let phone = rawPhone;
+
+      // 如果传的是 code（新版微信 getPhoneNumber），通过微信接口解密手机号
+      if (!phone && code) {
+        const { WECHAT_APP_ID, WECHAT_APP_SECRET } = process.env;
+        const tokenUrl = `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${WECHAT_APP_ID}&secret=${WECHAT_APP_SECRET}`;
+        const tokenRes = await axios.get(tokenUrl);
+        const { access_token, errcode: tokenErr, errmsg: tokenMsg } = tokenRes.data;
+
+        if (tokenErr || !access_token) {
+          console.error('获取access_token失败:', tokenRes.data);
+          return Response.error(res, tokenMsg || '获取access_token失败', 400);
+        }
+
+        const phoneUrl = `https://api.weixin.qq.com/wxa/business/getuserphonenumber?access_token=${access_token}`;
+        const phoneRes = await axios.post(phoneUrl, { code });
+        const { errcode: phoneErr, errmsg: phoneMsg, phone_info } = phoneRes.data;
+
+        if (phoneErr !== 0) {
+          console.error('获取手机号失败:', phoneRes.data);
+          return Response.error(res, phoneMsg || '获取手机号失败', 400);
+        }
+
+        phone = phone_info && phone_info.purePhoneNumber;
+      }
 
       if (!phone) {
         return Response.validateError(res, '手机号不能为空');

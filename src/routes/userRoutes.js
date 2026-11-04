@@ -27,9 +27,7 @@ router.post('/login', [
 // 用户信息相关路由（需要认证）
 router.get('/info', authMiddleware, UserController.getUserInfo);
 router.put('/info', authMiddleware, UserController.updateUserInfo);
-router.post('/bindPhone', [
-  body('phone').isMobilePhone('zh-CN').withMessage('手机号格式不正确')
-], validateMiddleware, authMiddleware, UserController.bindPhone);
+router.post('/bindPhone', authMiddleware, UserController.bindPhone);
 
 // 根据手机号获取用户信息（需要认证）
 router.get('/info/by-phone', authMiddleware, UserController.getUserInfoByPhone);

@@ -2,9 +2,16 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { clientIpMiddleware, parseTrustProxy } = require('./middleware/clientIp');
 
 // 创建Express应用
 const app = express();
+
+// 可信代理配置：决定能否使用 X-Forwarded-For / X-Real-IP 解析真实客户端 IP
+app.set('trust proxy', parseTrustProxy(process.env.TRUST_PROXY));
+
+// 网关最外层：解析客户端 IP，结果写入 req.clientIp
+app.use(clientIpMiddleware);
 
 // 中间件配置
 app.use(cors());
