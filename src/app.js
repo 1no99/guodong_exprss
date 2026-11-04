@@ -15,6 +15,11 @@ app.use(clientIpMiddleware);
 
 // 中间件配置
 app.use(cors());
+
+// IP 访问控制：查 iptable，命中 isOpen='true' 的 IP 直接返回特殊错误
+// 只作用于 API，静态资源和健康检查不受影响
+app.use('/api', require('./middleware/ipAccess').ipAccessMiddleware);
+
 app.use(express.json({ limit: '10mb' })); // 增加 JSON 请求体大小限制
 app.use(express.urlencoded({ extended: true, limit: '10mb' })); // 增加 URL 编码请求体大小限制
 
@@ -31,6 +36,7 @@ app.use('/api/order', require('./routes/orderRoutes'));
 app.use('/api/banner', require('./routes/bannerRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
+app.use('/api/ip-access', require('./routes/ipAccessRoutes'));
 
 // 兼容旧版轮播图接口
 app.get('/api/banner/list', require('./controllers/bannerController').getBannerList);

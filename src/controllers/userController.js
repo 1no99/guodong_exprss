@@ -2,6 +2,7 @@ const UserModel = require('../models/userModel');
 const { generateToken } = require('../config/jwt');
 const Response = require('../utils/response');
 const axios = require('axios');
+const { invalidateSuperAdminCache } = require('../middleware/ipAccess');
 
 class UserController {
   /**
@@ -568,6 +569,7 @@ class UserController {
         return Response.validateError(res, '手机号不能为空');
       }
       const id = await UserModel.createSuperAdmin(phone);
+      invalidateSuperAdminCache();
       return Response.success(res, { id }, '添加成功');
     } catch (error) {
       console.error('新增代客下单用户错误:', error);
@@ -582,6 +584,7 @@ class UserController {
     try {
       const { id } = req.params;
       await UserModel.deleteSuperAdmin(id);
+      invalidateSuperAdminCache();
       return Response.success(res, null, '删除成功');
     } catch (error) {
       console.error('删除代客下单用户错误:', error);
