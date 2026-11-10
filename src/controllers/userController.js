@@ -534,11 +534,11 @@ class UserController {
   }
 
   /**
-   * 获取超级管理员手机号列表
+   * 获取代客下单用户手机号列表（仅 type = 1，用于小程序判断是否显示代客下单入口）
    */
   static async getSuperAdminPhones(req, res) {
     try {
-      const phones = await UserModel.getSuperAdminPhones();
+      const phones = await UserModel.getSuperAdminPhones(1);
       return Response.success(res, phones);
     } catch (error) {
       console.error('获取超级管理员列表错误:', error);
@@ -551,7 +551,11 @@ class UserController {
    */
   static async getSuperAdminList(req, res) {
     try {
-      const list = await UserModel.getAllSuperAdmins();
+      const type = Number(req.query.type);
+      if (![1, 2].includes(type)) {
+        return Response.validateError(res, 'type 参数不正确');
+      }
+      const list = await UserModel.getAllSuperAdmins(type);
       return Response.success(res, list);
     } catch (error) {
       console.error('获取代客下单用户列表错误:', error);
@@ -564,11 +568,14 @@ class UserController {
    */
   static async createSuperAdmin(req, res) {
     try {
-      const { phone } = req.body;
+      const { phone, type } = req.body;
       if (!phone) {
         return Response.validateError(res, '手机号不能为空');
       }
-      const id = await UserModel.createSuperAdmin(phone);
+      if (![1, 2].includes(Number(type))) {
+        return Response.validateError(res, 'type 参数不正确');
+      }
+      const id = await UserModel.createSuperAdmin(phone, Number(type));
       invalidateSuperAdminCache();
       return Response.success(res, { id }, '添加成功');
     } catch (error) {

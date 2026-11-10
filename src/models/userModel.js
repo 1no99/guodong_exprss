@@ -183,29 +183,30 @@ class UserModel {
   }
 
   /**
-   * 获取所有启用的超级管理员手机号列表
+   * 获取超级管理员手机号列表
+   * @param {number} [type] 传 2 时仅查询受限地区白名单用户；不传返回全部
    */
-  static async getSuperAdminPhones() {
-    const sql = 'SELECT * FROM superadmin ';
-    const [rows] = await db.query(sql);
+  static async getSuperAdminPhones(type) {
+    const sql = type ? 'SELECT * FROM superadmin WHERE type = ?' : 'SELECT * FROM superadmin';
+    const [rows] = await db.query(sql, type ? [type] : []);
     return rows.map(row => row.pone);
   }
 
   /**
    * 获取所有代客下单用户列表
    */
-  static async getAllSuperAdmins() {
-    const sql = 'SELECT * FROM superadmin';
-    const [rows] = await db.query(sql);
+  static async getAllSuperAdmins(type) {
+    const sql = 'SELECT * FROM superadmin WHERE type = ?';
+    const [rows] = await db.query(sql, [type]);
     return rows;
   }
 
   /**
    * 新增代客下单用户
    */
-  static async createSuperAdmin(pone) {
-    const sql = 'INSERT INTO superadmin (pone) VALUES (?)';
-    const [result] = await db.query(sql, [pone]);
+  static async createSuperAdmin(pone, type = 1) {
+    const sql = 'INSERT INTO superadmin (pone, type) VALUES (?, ?)';
+    const [result] = await db.query(sql, [pone, type]);
     return result.insertId;
   }
 

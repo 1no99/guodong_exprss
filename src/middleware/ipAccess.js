@@ -184,14 +184,14 @@ function normalizePhone(phone) {
 }
 
 /**
- * 从 superadmin 表加载手机号白名单
+ * 从 superadmin 表加载手机号白名单（仅 type = 2 的受限地区白名单用户）
  */
 async function loadSuperAdminPhones() {
   if (superAdminRefreshing) return superAdminRefreshing;
 
   superAdminRefreshing = (async () => {
     try {
-      const phones = await UserModel.getSuperAdminPhones();
+      const phones = await UserModel.getSuperAdminPhones(2);
       superAdminCache = {
         phones: new Set(phones.map(normalizePhone).filter(Boolean)),
         loadedAt: Date.now()
